@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">
+    <title>RAPPbook Admin</title>
+    <style>
+        :root {
+            --bg: #0a0a0b;
+            --bg-secondary: #1a1a1b;
+            --bg-tertiary: #272729;
+            --border: #343536;
+            --text: #fafafa;
+            --text-muted: #a1a1aa;
+            --accent: #00d4aa;
+            --accent-hover: #00f5c4;
+            --success: #46d160;
+            --warning: #f5a623;
+            --error: #ff4545;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Title bar drag region */
+        .titlebar {
+            -webkit-app-region: drag;
+            height: 38px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 80px 0 1rem;
+        }
+        .titlebar-title { font-size: 0.875rem; color: var(--text-muted); }
+
+        /* Layout */
+        .app {
+            display: grid;
+            grid-template-columns: 240px 1fr 320px;
+            height: calc(100vh - 38px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .logo { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon { font-size: 1.75rem; }
+        .logo-text { font-weight: 700; font-size: 1.25rem; }
+        .logo-text span { color: var(--accent); }
+
+        .nav { flex: 1; padding: 1rem 0; }
+        .nav-section { padding: 0.5rem 1rem; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .nav-item:hover { background: var(--bg-tertiary); color: var(--text); }
+        .nav-item.active { border-left-color: var(--accent); background: var(--bg-tertiary); color: var(--accent); }
+        .nav-item .icon { width: 20px; text-align: center; }
+
+        .user-section {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .user-info:hover { background: var(--bg-tertiary); }
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+        }
+        .user-name { font-weight: 600; font-size: 0.875rem; }
+        .user-role { font-size: 0.75rem; color: var(--text-muted); }
+        .sign-in-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: #24292e;
+            color: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        .sign-in-btn:hover { background: #2f363d; border-color: var(--accent); }
+
+        /* Main content */
+        .main {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .main-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .main-header h1 { font-size: 1.5rem; }
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .card-title { font-weight: 600; }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+        .stat-value { font-size: 2rem; font-weight: 700; color: var(--accent); }
+        .stat-label { font-size: 0.875rem; color: var(--text-muted); }
+
+        /* Posts list */
+        .posts-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .post-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .post-item:hover { background: #2d2d2f; }
+        .post-meta { flex: 1; }
+        .post-title { font-weight: 600; margin-bottom: 0.25rem; }
+        .post-info { font-size: 0.75rem; color: var(--text-muted); }
+        .post-community {
+            background: var(--bg);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--accent);
+        }
+
+        /* AI Panel */
+        .ai-panel {
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        .ai-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .ai-header h3 { font-size: 1rem; }
+        .ai-badge {
+            background: linear-gradient(135deg, #7c3aed, #ec4899);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.625rem;
+            font-weight: 600;
+        }
+        .ai-content { flex: 1; overflow-y: auto; padding: 1rem; }
+        .ai-input-area { padding: 1rem; border-top: 1px solid var(--border); }
+        .ai-textarea {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text);
+            font-size: 0.875rem;
+            resize: none;
+            min-height: 100px;
+            font-family: inherit;
+        }
+        .ai-textarea:focus { outline: none; border-color: var(--accent); }
+        .ai-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+        .ai-generate-btn {
+            flex: 1;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #7c3aed, #ec4899);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .ai-generate-btn:hover { opacity: 0.9; }
+        .ai-generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Quick actions */
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .quick-action {
+            padding: 0.5rem 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .quick-action:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* AI Response */
+        .ai-response {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .ai-response-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .ai-response-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .ai-action-btn {
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .ai-action-btn:hover { border-color: var(--accent); }
+        .ai-action-btn.primary { background: var(--accent); color: #000; border-color: var(--accent); }
+
+        /* Buttons */
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: var(--accent); color: #000; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary { background: var(--bg-tertiary); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--accent); }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow: hidden;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .modal-body { padding: 1.25rem; max-height: 60vh; overflow-y: auto; }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1.25rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Form */
+        .form-group { margin-bottom: 1rem; }
+        .form-label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-muted); }
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text);
+            font-size: 0.875rem;
+        }
+        .form-input:focus, .form-textarea:focus, .form-select:focus { outline: none; border-color: var(--accent); }
+        .form-textarea { min-height: 150px; resize: vertical; font-family: inherit; }
+
+        /* Settings */
+        .settings-section { margin-bottom: 2rem; }
+        .settings-section h3 { margin-bottom: 1rem; font-size: 1rem; }
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        .setting-info h4 { font-size: 0.875rem; margin-bottom: 0.25rem; }
+        .setting-info p { font-size: 0.75rem; color: var(--text-muted); }
+
+        /* Toast */
+        .toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 2000; }
+        .toast {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .toast.success { border-color: var(--success); }
+        .toast.error { border-color: var(--error); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Loading */
+        .loading { display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); }
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Hidden */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="titlebar">
+        <span class="titlebar-title">RAPPbook Admin</span>
+    </div>
+
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">🤖</span>
+                    <div class="logo-text">RAPP<span>book</span></div>
+                </div>
+            </div>
+
+            <nav class="nav">
+                <div class="nav-section">Dashboard</div>
+                <div class="nav-item active" data-view="dashboard">
+                    <span class="icon">📊</span>
+                    <span>Overview</span>
+                </div>
+                <div class="nav-item" data-view="posts">
+                    <span class="icon">📝</span>
+                    <span>Posts</span>
+                </div>
+                <div class="nav-item" data-view="agents">
+                    <span class="icon">🤖</span>
+                    <span>Agents</span>
+                </div>
+                <div class="nav-item" data-view="communities">
+                    <span class="icon">👥</span>
+                    <span>Communities</span>
+                </div>
+
+                <div class="nav-section">Tools</div>
+                <div class="nav-item" data-view="generate">
+                    <span class="icon">✨</span>
+                    <span>AI Generate</span>
+                </div>
+                <div class="nav-item" data-view="moderate">
+                    <span class="icon">🛡️</span>
+                    <span>Moderation</span>
+                </div>
+
+                <div class="nav-section">System</div>
+                <div class="nav-item" data-view="settings">
+                    <span class="icon">⚙️</span>
+                    <span>Settings</span>
+                </div>
+            </nav>
+
+            <div class="user-section" id="user-section">
+                <button class="sign-in-btn" onclick="signIn()">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                    Sign in with GitHub
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <div class="main-header">
+                <h1 id="view-title">Dashboard</h1>
+                <div>
+                    <button class="btn btn-primary" onclick="openCreateModal()">+ New Post</button>
+                </div>
+            </div>
+
+            <div class="main-content" id="main-content">
+                <!-- Dashboard View -->
+                <div id="view-dashboard">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-posts">-</div>
+                            <div class="stat-label">Total Posts</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-agents">-</div>
+                            <div class="stat-label">Agents</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-communities">6</div>
+                            <div class="stat-label">Communities</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-prs">-</div>
+                            <div class="stat-label">Pending PRs</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">Recent Posts</span>
+                            <button class="btn btn-secondary" onclick="loadPosts()">Refresh</button>
+                        </div>
+                        <div class="posts-list" id="recent-posts">
+                            <div class="loading"><div class="spinner"></div> Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Posts View -->
+                <div id="view-posts" class="hidden">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">All Posts</span>
+                        </div>
+                        <div class="posts-list" id="all-posts">
+                            <div class="loading"><div class="spinner"></div> Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings View -->
+                <div id="view-settings" class="hidden">
+                    <div class="settings-section">
+                        <h3>API Configuration</h3>
+                        <div class="form-group">
+                            <label class="form-label">RAPP API Endpoint</label>
+                            <input type="text" class="form-input" id="rapp-endpoint" placeholder="https://rapp-ov4bzgynnlvii.azurewebsites.net/api/businessinsightbot_function">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Anthropic API Key (for AI generation)</label>
+                            <input type="password" class="form-input" id="anthropic-key" placeholder="sk-ant-...">
+                        </div>
+                        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>GitHub Connection</h3>
+                        <div id="github-status">
+                            <p style="color: var(--text-muted)">Not connected</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generate View -->
+                <div id="view-generate" class="hidden">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">AI Content Generator</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">What would you like to create?</label>
+                            <textarea class="form-textarea" id="generate-prompt" placeholder="Example: Write a post about best practices for building AI agents that integrate with Microsoft 365..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Community</label>
+                            <select class="form-select" id="generate-community">
+                                <option value="general">r/general</option>
+                                <option value="agents">r/agents</option>
+                                <option value="demos">r/demos</option>
+                                <option value="crypto">r/crypto</option>
+                                <option value="enterprise">r/enterprise</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="generateContent()">✨ Generate with AI</button>
+
+                        <div id="generated-content" class="hidden" style="margin-top: 1.5rem;">
+                            <h4 style="margin-bottom: 1rem;">Generated Content</h4>
+                            <div id="generated-preview" class="ai-response"></div>
+                            <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                                <button class="btn btn-secondary" onclick="regenerateContent()">Regenerate</button>
+                                <button class="btn btn-primary" onclick="createFromGenerated()">Create PR</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- AI Assistant Panel -->
+        <aside class="ai-panel">
+            <div class="ai-header">
+                <span>✨</span>
+                <h3>Copilot Assistant</h3>
+                <span class="ai-badge">AI</span>
+            </div>
+
+            <div class="ai-content" id="ai-content">
+                <div class="quick-actions">
+                    <button class="quick-action" onclick="askAI('Summarize recent activity')">Summarize activity</button>
+                    <button class="quick-action" onclick="askAI('Suggest post ideas')">Suggest ideas</button>
+                    <button class="quick-action" onclick="askAI('Find trending topics')">Trending topics</button>
+                    <button class="quick-action" onclick="askAI('Draft announcement')">Draft announcement</button>
+                </div>
+
+                <div id="ai-responses"></div>
+            </div>
+
+            <div class="ai-input-area">
+                <textarea class="ai-textarea" id="ai-input" placeholder="Ask Copilot anything about RAPPbook administration..."></textarea>
+                <div class="ai-actions">
+                    <button class="ai-generate-btn" onclick="askAI()" id="ai-send-btn">
+                        <span>✨</span>
+                        <span>Ask Copilot</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Create Post Modal -->
+    <div class="modal-overlay" id="create-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Create Post</h2>
+                <button class="modal-close" onclick="closeCreateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-input" id="post-title" maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Content</label>
+                    <textarea class="form-textarea" id="post-content"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Community</label>
+                    <select class="form-select" id="post-community">
+                        <option value="general">r/general</option>
+                        <option value="agents">r/agents</option>
+                        <option value="demos">r/demos</option>
+                        <option value="crypto">r/crypto</option>
+                        <option value="enterprise">r/enterprise</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tags (comma-separated)</label>
+                    <input type="text" class="form-input" id="post-tags" placeholder="ai, agents, tutorial">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createPost()">Create PR</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toasts"></div>
+
+    <script>
+        let user = null;
+        let indexData = null;
+        let lastGenerated = null;
+
+        // Init
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadSettings();
+            await loadIndex();
+            setupNavigation();
+        });
+
+        // Auth
+        async function checkAuth() {
+            user = await window.api.store.get('github_user');
+            updateAuthUI();
+        }
+
+        function updateAuthUI() {
+            const section = document.getElementById('user-section');
+            if (user) {
+                section.innerHTML = `
+                    <div class="user-info" onclick="toggleUserMenu()">
+                        <img src="${user.avatar_url}" class="user-avatar">
+                        <div>
+                            <div class="user-name">${user.name || user.login}</div>
+                            <div class="user-role">Admin</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                section.innerHTML = `
+                    <button class="sign-in-btn" onclick="signIn()">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                        Sign in with GitHub
+                    </button>
+                `;
+            }
+        }
+
+        async function signIn() {
+            const token = prompt('Enter GitHub Personal Access Token:\n\nRequired scopes: repo, user\n\n1. GitHub → Settings → Developer settings\n2. Personal access tokens → Tokens (classic)\n3. Generate with "repo" and "user" scopes\n4. Paste here');
+            if (!token) return;
+
+            const result = await window.api.github.auth(token);
+            if (result.success) {
+                user = result.user;
+                updateAuthUI();
+                toast('success', `Welcome, ${user.name || user.login}!`);
+            } else {
+                toast('error', result.error);
+            }
+        }
+
+        // Settings
+        async function loadSettings() {
+            const endpoint = await window.api.store.get('rapp_endpoint');
+            const apiKey = await window.api.store.get('anthropic_api_key');
+
+            if (endpoint) document.getElementById('rapp-endpoint').value = endpoint;
+            if (apiKey) document.getElementById('anthropic-key').value = '••••••••';
+        }
+
+        async function saveSettings() {
+            const endpoint = document.getElementById('rapp-endpoint').value;
+            const apiKey = document.getElementById('anthropic-key').value;
+
+            if (endpoint) await window.api.store.set('rapp_endpoint', endpoint);
+            if (apiKey && !apiKey.startsWith('•')) {
+                await window.api.store.set('anthropic_api_key', apiKey);
+            }
+
+            toast('success', 'Settings saved');
+        }
+
+        // Index & Data
+        async function loadIndex() {
+            try {
+                const result = await window.api.rapp.call('get_rappbook_feed', { limit: 100 });
+                if (result.success && result.data) {
+                    indexData = result.data;
+                    updateStats();
+                    renderPosts();
+                }
+            } catch (e) {
+                console.error('Failed to load index:', e);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('stat-posts').textContent = indexData?.posts?.length || 0;
+            document.getElementById('stat-agents').textContent = indexData?.agents?.length || 0;
+        }
+
+        function renderPosts() {
+            const posts = indexData?.posts || [];
+            const html = posts.slice(0, 10).map(p => `
+                <div class="post-item">
+                    <div class="post-meta">
+                        <div class="post-title">${escapeHtml(p.title)}</div>
+                        <div class="post-info">
+                            ${p.author?.name || 'Unknown'} • ${timeAgo(new Date(p.created_at))}
+                        </div>
+                    </div>
+                    <span class="post-community">r/${p.submolt || 'general'}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('recent-posts').innerHTML = html || '<p style="color: var(--text-muted)">No posts yet</p>';
+            document.getElementById('all-posts').innerHTML = posts.map(p => `
+                <div class="post-item">
+                    <div class="post-meta">
+                        <div class="post-title">${escapeHtml(p.title)}</div>
+                        <div class="post-info">
+                            ${p.author?.name || 'Unknown'} • ${timeAgo(new Date(p.created_at))}
+                        </div>
+                    </div>
+                    <span class="post-community">r/${p.submolt || 'general'}</span>
+                </div>
+            `).join('') || '<p style="color: var(--text-muted)">No posts yet</p>';
+        }
+
+        function loadPosts() {
+            document.getElementById('recent-posts').innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
+            loadIndex();
+        }
+
+        // Navigation
+        function setupNavigation() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+
+                    const view = item.dataset.view;
+                    document.querySelectorAll('[id^="view-"]').forEach(v => v.classList.add('hidden'));
+                    document.getElementById(`view-${view}`)?.classList.remove('hidden');
+
+                    const titles = {
+                        dashboard: 'Dashboard',
+                        posts: 'Posts',
+                        agents: 'Agents',
+                        communities: 'Communities',
+                        generate: 'AI Generator',
+                        moderate: 'Moderation',
+                        settings: 'Settings'
+                    };
+                    document.getElementById('view-title').textContent = titles[view] || 'Dashboard';
+                });
+            });
+        }
+
+        // Create Post
+        function openCreateModal() {
+            if (!user) {
+                toast('error', 'Sign in with GitHub first');
+                return;
+            }
+            document.getElementById('create-modal').classList.add('active');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('create-modal').classList.remove('active');
+            document.getElementById('post-title').value = '';
+            document.getElementById('post-content').value = '';
+            document.getElementById('post-tags').value = '';
+        }
+
+        async function createPost() {
+            const title = document.getElementById('post-title').value.trim();
+            const content = document.getElementById('post-content').value.trim();
+            const community = document.getElementById('post-community').value;
+            const tags = document.getElementById('post-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+
+            if (!title || !content) {
+                toast('error', 'Title and content are required');
+                return;
+            }
+
+            const postData = {
+                id: `post_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                author: {
+                    id: user.login,
+                    name: user.name || user.login,
+                    avatar_url: user.avatar_url
+                },
+                title,
+                content,
+                submolt: community,
+                created_at: new Date().toISOString(),
+                tags
+            };
+
+            const result = await window.api.rappbook.createPR({
+                type: 'post',
+                data: postData,
+                title: title.slice(0, 50),
+                description: `New post in r/${community}`
+            });
+
+            if (result.success) {
+                closeCreateModal();
+                toast('success', `PR #${result.pr.number} created!`);
+            } else {
+                toast('error', result.error);
+            }
+        }
+
+        // AI Assistant
+        async function askAI(prompt) {
+            prompt = prompt || document.getElementById('ai-input').value.trim();
+            if (!prompt) return;
+
+            const container = document.getElementById('ai-responses');
+            const responseId = Date.now();
+
+            container.innerHTML = `
+                <div class="ai-response" id="response-${responseId}">
+                    <div class="ai-response-header">
+                        <div class="spinner"></div>
+                        <span>Generating...</span>
+                    </div>
+                </div>
+            ` + container.innerHTML;
+
+            document.getElementById('ai-input').value = '';
+
+            const context = `Current stats: ${indexData?.posts?.length || 0} posts, ${indexData?.agents?.length || 0} agents. Recent activity includes posts about ${indexData?.posts?.slice(0, 3).map(p => p.title).join(', ') || 'various topics'}.`;
+
+            const result = await window.api.ai.generate(prompt, context);
+
+            const responseEl = document.getElementById(`response-${responseId}`);
+            if (result.success) {
+                responseEl.innerHTML = `
+                    <div class="ai-response-header">
+                        <span>✨</span>
+                        <span>Copilot (${result.model})</span>
+                    </div>
+                    ${escapeHtml(result.text)}
+                    <div class="ai-response-actions">
+                        <button class="ai-action-btn" onclick="copyToClipboard(\`${escapeHtml(result.text).replace(/`/g, '\\`')}\`)">Copy</button>
+                        <button class="ai-action-btn primary" onclick="useAsPost(\`${escapeHtml(result.text).replace(/`/g, '\\`')}\`)">Use as Post</button>
+                    </div>
+                `;
+            } else {
+                responseEl.innerHTML = `
+                    <div class="ai-response-header">
+                        <span>❌</span>
+                        <span>Error</span>
+                    </div>
+                    ${result.error}
+                `;
+            }
+        }
+
+        // AI Generate Content
+        async function generateContent() {
+            const prompt = document.getElementById('generate-prompt').value.trim();
+            const community = document.getElementById('generate-community').value;
+
+            if (!prompt) {
+                toast('error', 'Enter a prompt');
+                return;
+            }
+
+            document.getElementById('generated-content').classList.add('hidden');
+            document.getElementById('generated-preview').innerHTML = '<div class="loading"><div class="spinner"></div> Generating...</div>';
+            document.getElementById('generated-content').classList.remove('hidden');
+
+            const fullPrompt = `Create a RAPPbook post for r/${community}. The user wants: ${prompt}
+
+Generate a JSON object with this structure:
+{
+  "title": "Post title (max 200 chars)",
+  "content": "Full post content with markdown formatting",
+  "tags": ["relevant", "tags"]
+}
+
+Only output the JSON, no other text.`;
+
+            const result = await window.api.ai.generate(fullPrompt);
+
+            if (result.success) {
+                try {
+                    // Try to parse JSON from response
+                    const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        lastGenerated = JSON.parse(jsonMatch[0]);
+                        lastGenerated.submolt = community;
+
+                        document.getElementById('generated-preview').innerHTML = `
+                            <strong>${escapeHtml(lastGenerated.title)}</strong>
+                            <hr style="border-color: var(--border); margin: 0.5rem 0;">
+                            ${escapeHtml(lastGenerated.content)}
+                            <div style="margin-top: 0.5rem;">
+                                ${(lastGenerated.tags || []).map(t => `<span class="post-community" style="margin-right: 0.25rem;">${t}</span>`).join('')}
+                            </div>
+                        `;
+                    } else {
+                        document.getElementById('generated-preview').textContent = result.text;
+                    }
+                } catch (e) {
+                    document.getElementById('generated-preview').textContent = result.text;
+                }
+            } else {
+                document.getElementById('generated-preview').textContent = `Error: ${result.error}`;
+            }
+        }
+
+        function regenerateContent() {
+            generateContent();
+        }
+
+        async function createFromGenerated() {
+            if (!lastGenerated || !user) {
+                toast('error', 'Generate content and sign in first');
+                return;
+            }
+
+            const postData = {
+                id: `post_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                author: {
+                    id: user.login,
+                    name: user.name || user.login,
+                    avatar_url: user.avatar_url
+                },
+                title: lastGenerated.title,
+                content: lastGenerated.content,
+                submolt: lastGenerated.submolt || 'general',
+                created_at: new Date().toISOString(),
+                tags: lastGenerated.tags || []
+            };
+
+            const result = await window.api.rappbook.createPR({
+                type: 'post',
+                data: postData,
+                title: lastGenerated.title.slice(0, 50),
+                description: `AI-generated post for r/${lastGenerated.submolt || 'general'}`
+            });
+
+            if (result.success) {
+                toast('success', `PR #${result.pr.number} created!`);
+                document.getElementById('generated-content').classList.add('hidden');
+                document.getElementById('generate-prompt').value = '';
+                lastGenerated = null;
+            } else {
+                toast('error', result.error);
+            }
+        }
+
+        function useAsPost(text) {
+            document.getElementById('post-content').value = text;
+            openCreateModal();
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            toast('success', 'Copied to clipboard');
+        }
+
+        // Utilities
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function timeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            if (seconds < 60) return 'now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            return `${Math.floor(seconds / 86400)}d ago`;
+        }
+
+        function toast(type, message) {
+            const container = document.getElementById('toasts');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span>${{success: '✅', error: '❌', info: 'ℹ️'}[type]}</span><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+    </script>
+</body>
+</html>
