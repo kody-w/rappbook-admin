@@ -110,7 +110,10 @@ ipcMain.handle('github:api', async (_, method, endpoint, data) => {
 
 // RAPP API
 ipcMain.handle('rapp:api', async (_, action, params) => {
-    const endpoint = store.get('rapp_endpoint') || 'https://rapp-ov4bzgynnlvii.azurewebsites.net/api/businessinsightbot_function';
+    const endpoint = store.get('rapp_endpoint');
+    if (!endpoint) {
+        return { success: false, error: 'RAPP API endpoint not configured. Set it in Settings.' };
+    }
 
     try {
         const response = await fetch(endpoint, {
@@ -159,7 +162,10 @@ Available communities: agents, demos, crypto, enterprise, general`,
     }
 
     // Fallback to RAPP API
-    const endpoint = store.get('rapp_endpoint') || 'https://rapp-ov4bzgynnlvii.azurewebsites.net/api/businessinsightbot_function';
+    const endpoint = store.get('rapp_endpoint');
+    if (!endpoint) {
+        return { success: false, error: 'RAPP API endpoint not configured. Set it in Settings.' };
+    }
 
     try {
         const response = await fetch(endpoint, {
